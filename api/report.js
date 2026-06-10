@@ -19,7 +19,7 @@ export default async function handler(req, res) {
         temperature: 0,
         messages: [{
           role: 'user',
-          content: `Sos un filtro de bugs para el launcher Zotlin. El usuario te manda un texto describiendo un problema o sugerencia. Devolvé ÚNICAMENTE un JSON válido con exactamente estas tres claves: "tipo": solo puede ser "bug", "sugerencia" o "basura" (basura = spam, insultos, texto sin sentido), "gravedad": solo puede ser "alta", "media" o "baja", "resumen": string de máximo 15 palabras describiendo el problema. No agregues texto antes ni después. No uses markdown. No uses bloques de código. Solo el JSON puro. Ejemplo de respuesta válida: {"tipo":"bug","gravedad":"alta","resumen":"El launcher se cierra al iniciar Minecraft 1.21"}\n\nTexto del usuario: ${text}`
+          content: `Sos el sistema de clasificación de reportes del launcher Zotlin. El usuario enviará un bug, una sugerencia o basura. Devolvé ÚNICAMENTE un JSON válido. Si es un bug devolvé {"tipo":"bug","gravedad":"alta|media|baja","resumen":"..."}. Si es una sugerencia devolvé {"tipo":"sugerencia","impacto":"alto|medio|bajo","resumen":"..."}. Si es basura (spam, insultos, publicidad o texto sin sentido) devolvé {"tipo":"basura","gravedad":"baja","resumen":"..."}. La gravedad de un bug debe representar qué tan serio es el problema. El impacto de una sugerencia debe representar cuánto mejoraría Zotlin. El resumen debe tener máximo 15 palabras. No agregues texto antes ni después. No uses markdown. No uses bloques de código. Respondé únicamente con JSON. Texto del usuario: ${text}`
         }]
       })
     })
@@ -36,23 +36,51 @@ export default async function handler(req, res) {
       parsed = null
     }
 
-    if (!parsed || !parsed.tipo || !parsed.resumen) {
-      return res.status(500).json({ error: 'La IA no devolvió un JSON válido' })
-    }
-
+    if (
+  !parsed ||
+  !parsed.tipo ||
+  !parsed.resumen ||
+  (
+    parsed.tipo === 'bug' &&
+    !parsed.gravedad
+  ) ||
+  (
+    parsed.tipo === 'sugerencia' &&
+    !parsed.impacto
+  )
+) {
+  return res.status(500).json({ error: 'La IA no devolvió un JSON válido' })
+}
     const labelMap = {
       bug: 'bug',
       sugerencia: 'enhancement',
       basura: 'spam'
     }
     const gravedadMap = {
-      alta: '🔴 Alta',
-      media: '🟡 Media',
-      baja: '🟢 Baja'
-    }
+  alta: '🔴 Alta',
+  media: '🟡 Media',
+  baja: '🟢 Baja'
+}
+
+const impactoMap = {
+  alto: '🔴 Alto',
+  medio: '🟡 Medio',
+  bajo: '🟢 Bajo'
+}
 
     const label = labelMap[parsed.tipo] || 'bug'
-    const gravedadLabel = gravedadMap[parsed.gravedad] || parsed.gravedad
+    const gravedadLabel = parsed.gravedad
+  ? gravedadMap[parsed.gravedad] || parsed.gravedad
+  : null
+
+const impactoLabel = parsed.impacto
+  ? impactoMap[parsed.impacto] || parsed.impacto
+  : null
+
+    const detalle =
+  parsed.tipo === 'sugerencia'
+    ? `**Impacto:** ${impactoLabel}`
+    : `**Gravedad:** ${gravedadLabel}`
 
 const issueRes = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPO}/issues`, {
   method: 'POST',
@@ -63,8 +91,12 @@ const issueRes = await fetch(`https://api.github.com/repos/${process.env.GITHUB_
   },
   body: JSON.stringify({
     title: `[${parsed.tipo.toUpperCase()}] ${parsed.resumen}`,
-    body: `**Tipo:** ${parsed.tipo}\n**Gravedad:** ${gravedadLabel}\n\n---\n\n**Reporte original:**\n\n${text}`,
-    labels: [label]
+    body: `**Tipo:** ${parsed.tipo}\n${detalle}\n\n---\n\n**Reporte original:**\n\n${text}`,
+    labels: [
+  label,
+  ...(parsed.gravedad ? [`gravedad:${parsed.gravedad}`] : []),
+  ...(parsed.impacto ? [`impacto:${parsed.impacto}`] : [])
+]
   })
 })
 
