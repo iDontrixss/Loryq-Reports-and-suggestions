@@ -4,39 +4,216 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reportar un problema — Zotlin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; background: #0f1814; color: #e0e0e0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
-    .card { background: #1a1a1a; border: 0.5px solid #2a2a2a; border-radius: 16px; padding: 32px; width: 100%; max-width: 520px; }
-    .logo { width: 48px; height: 48px; background: #1D9E75; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 20px; }
-    h1 { font-size: 20px; font-weight: 600; color: #fff; margin-bottom: 6px; }
-    .sub { font-size: 13px; color: #666; margin-bottom: 24px; line-height: 1.5; }
-    label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 8px; }
-    textarea { width: 100%; background: #242424; border: 0.5px solid #333; border-radius: 10px; color: #e0e0e0; font-size: 14px; font-family: inherit; padding: 12px 14px; resize: vertical; min-height: 120px; outline: none; transition: border-color 0.15s; }
-    textarea:focus { border-color: #1D9E75; }
-    textarea::placeholder { color: #444; }
-    .btn { width: 100%; background: #1D9E75; color: #fff; border: none; border-radius: 10px; padding: 13px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 16px; transition: opacity 0.15s; }
-    .btn:hover { opacity: 0.88; }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .msg { margin-top: 14px; font-size: 13px; text-align: center; padding: 10px; border-radius: 8px; display: none; }
-    .msg.ok { background: #1a2e27; color: #1D9E75; display: block; }
-    .msg.error { background: #2e1a1a; color: #e74c3c; display: block; }
-    .msg.spam { background: #2a2a1a; color: #f0c040; display: block; }
-    .char-count { font-size: 11px; color: #555; text-align: right; margin-top: 4px; }
+    :root {
+      --black: #0a0c0a;
+      --dark: #111612;
+      --card: #151b14;
+      --border: #1e2a1c;
+      --green: #4ade80;
+      --green-dim: #2a7a46;
+      --green-bg: rgba(74,222,128,.07);
+      --muted: #6b8c6a;
+      --light: #d6ead4;
+      --white: #f0f7ee;
+      --red: #e05c5c;
+      --mono: 'DM Mono', monospace;
+      --sans: 'Syne', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--black);
+      color: var(--light);
+      font-family: var(--sans);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      opacity: .025; pointer-events: none; z-index: 1000;
+    }
+
+    .glow {
+      position: fixed;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(224,92,92,.06) 0%, transparent 70%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -60%);
+      pointer-events: none;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: .06em;
+      margin-bottom: 28px;
+      transition: color .15s;
+    }
+    .back:hover { color: var(--green); }
+
+    .header { margin-bottom: 28px; }
+    .icon-wrap {
+      width: 56px; height: 56px;
+      background: rgba(224,92,92,.08);
+      border: 1px solid rgba(224,92,92,.2);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -.03em;
+      line-height: 1.15;
+      margin-bottom: 8px;
+    }
+    h1 em { font-style: normal; color: var(--red); }
+
+    .sub {
+      font-family: var(--mono);
+      font-size: .8rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 7px; }
+
+    label {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    textarea {
+      width: 100%;
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--light);
+      font-family: var(--sans);
+      font-size: 13px;
+      padding: 11px 14px;
+      outline: none;
+      resize: vertical;
+      min-height: 130px;
+      line-height: 1.6;
+      transition: border-color .15s;
+    }
+    textarea:focus { border-color: rgba(224,92,92,.4); }
+    textarea::placeholder { color: #3a4e39; }
+
+    .char-wrap { display: flex; justify-content: flex-end; margin-top: -10px; }
+    .char-count { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+
+    .btn {
+      width: 100%;
+      background: var(--red);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      letter-spacing: -.01em;
+    }
+    .btn:hover { opacity: .88; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+
+    .msg {
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-family: var(--mono);
+      font-size: 12px;
+      text-align: center;
+      display: none;
+      line-height: 1.5;
+    }
+    .msg.ok { background: rgba(74,222,128,.08); color: var(--green); border: 1px solid rgba(74,222,128,.2); display: block; }
+    .msg.error { background: rgba(224,92,92,.08); color: var(--red); border: 1px solid rgba(224,92,92,.2); display: block; }
+    .msg.spam { background: rgba(240,192,64,.08); color: #f0c040; border: 1px solid rgba(240,192,64,.2); display: block; }
+
+    .footer {
+      margin-top: 24px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: .06em;
+      text-align: center;
+    }
+    .footer a { color: var(--green); text-decoration: none; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="logo">Z</div>
-    <h1>Reportar un problema</h1>
-    <p class="sub">Describí el problema que encontraste o tu sugerencia. Nuestro sistema lo va a clasificar automáticamente.</p>
+  <div class="glow"></div>
 
-    <label for="report-text">Tu reporte</label>
-    <textarea id="report-text" placeholder="Ej: Al hacer click en Jugar con la versión 1.21.4 el launcher se cierra sin abrir el juego..." maxlength="1000"></textarea>
-    <div class="char-count"><span id="char-count">0</span>/1000</div>
+  <div class="container">
+    <a class="back" href="/">← volver</a>
 
-    <button class="btn" id="submit-btn" onclick="submitReport()">Enviar reporte</button>
-    <div class="msg" id="msg"></div>
+    <div class="header">
+      <div class="icon-wrap">🐛</div>
+      <h1>Algo no<br>está <em>funcionando</em></h1>
+      <p class="sub">Describí el problema con el mayor detalle posible. Cada error reportado hace que Zotlin sea un poco mejor.</p>
+    </div>
+
+    <div class="card">
+      <div class="field">
+        <label>Tu reporte</label>
+        <textarea id="report-text" placeholder="Ej: Al hacer click en Jugar con la versión 1.21.4 el launcher se cierra sin abrir el juego..." maxlength="1000"></textarea>
+        <div class="char-wrap">
+          <span class="char-count"><span id="char-count">0</span>/1000</span>
+        </div>
+      </div>
+
+      <button class="btn" id="submit-btn" onclick="submitReport()">Enviar reporte</button>
+      <div class="msg" id="msg"></div>
+    </div>
+
+    <div class="footer">
+      Zotlin Launcher · <a href="https://github.com/iDontrixss/ZotlinLauncher" target="_blank">GitHub</a>
+    </div>
   </div>
 
   <script>
