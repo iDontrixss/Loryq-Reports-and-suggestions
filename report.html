@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reportar un problema — Zotlin</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f1814; color: #e0e0e0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .card { background: #1a1a1a; border: 0.5px solid #2a2a2a; border-radius: 16px; padding: 32px; width: 100%; max-width: 520px; }
+    .logo { width: 48px; height: 48px; background: #1D9E75; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 20px; }
+    h1 { font-size: 20px; font-weight: 600; color: #fff; margin-bottom: 6px; }
+    .sub { font-size: 13px; color: #666; margin-bottom: 24px; line-height: 1.5; }
+    label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 8px; }
+    textarea { width: 100%; background: #242424; border: 0.5px solid #333; border-radius: 10px; color: #e0e0e0; font-size: 14px; font-family: inherit; padding: 12px 14px; resize: vertical; min-height: 120px; outline: none; transition: border-color 0.15s; }
+    textarea:focus { border-color: #1D9E75; }
+    textarea::placeholder { color: #444; }
+    .btn { width: 100%; background: #1D9E75; color: #fff; border: none; border-radius: 10px; padding: 13px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 16px; transition: opacity 0.15s; }
+    .btn:hover { opacity: 0.88; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .msg { margin-top: 14px; font-size: 13px; text-align: center; padding: 10px; border-radius: 8px; display: none; }
+    .msg.ok { background: #1a2e27; color: #1D9E75; display: block; }
+    .msg.error { background: #2e1a1a; color: #e74c3c; display: block; }
+    .msg.spam { background: #2a2a1a; color: #f0c040; display: block; }
+    .char-count { font-size: 11px; color: #555; text-align: right; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">Z</div>
+    <h1>Reportar un problema</h1>
+    <p class="sub">Describí el problema que encontraste o tu sugerencia. Nuestro sistema lo va a clasificar automáticamente.</p>
+
+    <label for="report-text">Tu reporte</label>
+    <textarea id="report-text" placeholder="Ej: Al hacer click en Jugar con la versión 1.21.4 el launcher se cierra sin abrir el juego..." maxlength="1000"></textarea>
+    <div class="char-count"><span id="char-count">0</span>/1000</div>
+
+    <button class="btn" id="submit-btn" onclick="submitReport()">Enviar reporte</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <script>
+    const textarea = document.getElementById('report-text')
+    const charCount = document.getElementById('char-count')
+
+    textarea.addEventListener('input', () => {
+      charCount.textContent = textarea.value.length
+    })
+
+    async function submitReport() {
+      const text = textarea.value.trim()
+      if (text.length < 10) {
+        showMsg('Escribí al menos 10 caracteres.', 'error')
+        return
+      }
+
+      const btn = document.getElementById('submit-btn')
+      btn.disabled = true
+      btn.textContent = 'Enviando...'
+      hideMsg()
+
+      try {
+        const res = await fetch('/api/report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        })
+        const data = await res.json()
+
+        if (data.ok) {
+          if (data.tipo === 'basura') {
+            showMsg('Tu mensaje fue recibido.', 'spam')
+          } else if (data.tipo === 'sugerencia') {
+            showMsg('¡Gracias! Tu sugerencia fue registrada.', 'ok')
+          } else {
+            showMsg('¡Gracias! El bug fue reportado correctamente.', 'ok')
+          }
+          textarea.value = ''
+          charCount.textContent = '0'
+        } else {
+          showMsg(data.error || 'Error al enviar. Intentá de nuevo.', 'error')
+        }
+      } catch (err) {
+        showMsg('Error de conexión. Intentá de nuevo.', 'error')
+      }
+
+      btn.disabled = false
+      btn.textContent = 'Enviar reporte'
+    }
+
+    function showMsg(text, type) {
+      const el = document.getElementById('msg')
+      el.textContent = text
+      el.className = 'msg ' + type
+    }
+
+    function hideMsg() {
+      const el = document.getElementById('msg')
+      el.className = 'msg'
+    }
+  </script>
+</body>
+</html>
