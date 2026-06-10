@@ -291,7 +291,7 @@
         if (data.ok) {
           showMsg('¡Gracias! Tu sugerencia fue registrada. La revisamos pronto.', 'ok')
           textarea.value = ''
-          document.getElementById('area').value = ''
+          document.getElementById('author').value = ''
           charCount.textContent = '0'
         } else {
           showMsg(data.error || 'Error al enviar. Intentá de nuevo.', 'error')
