@@ -42,8 +42,9 @@ export default async function handler(req, res) {
                   enum: ['alto', 'medio', 'bajo', 'none']
                 },
                 resumen: {
-                  type: 'string'
-                }
+  type: 'string',
+  description: 'Resumen técnico breve en español, máximo 15 palabras. Nunca en inglés.'
+}
               },
               required: ['tipo', 'gravedad', 'impacto', 'resumen'],
               additionalProperties: false
@@ -51,9 +52,9 @@ export default async function handler(req, res) {
           }
         },
         messages: [
-          {
-            role: 'system',
-            content: `Sos el backend de clasificación de reportes de Loryq Launcher.
+  {
+    role: 'system',
+    content: `Sos el backend de clasificación de reportes de Loryq Launcher.
 
 Tu único trabajo es analizar objetivamente el reporte del usuario y devolver un JSON válido que cumpla el schema.
 
@@ -74,14 +75,16 @@ Reglas:
 6. Si es "basura":
    - "gravedad": "none".
    - "impacto": "none".
-7. "resumen" debe tener máximo 15 palabras y resumir técnicamente la esencia del mensaje.
-8. No sobrevalores sugerencias menores. Clasificá según beneficio real para usuarios, no por facilidad de implementación.`
-          },
-          {
-            role: 'user',
-            content: `Texto del usuario:\n${reportText}`
-          }
-        ]
+7. "resumen" debe estar SIEMPRE en español, máximo 15 palabras, y resumir técnicamente la esencia del mensaje.
+8. No sobrevalores sugerencias menores. Clasificá según beneficio real para usuarios, no por facilidad de implementación.
+9. Aunque el modelo piense en inglés o el usuario escriba raro, nunca devuelvas "resumen" en inglés. Usá español claro y natural.
+10. Si el reporte del usuario está en inglés, igualmente traducí el "resumen" al español.`
+  },
+  {
+    role: 'user',
+    content: `Texto del usuario:\n${reportText}`
+  }
+]
       })
     })
 
